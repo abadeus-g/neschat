@@ -1,0 +1,67 @@
+version: '3.8'
+
+services:
+  api:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+      target: development
+    container_name: backend
+    # We mount api dir to docker container
+    # In order to reflect files from host to container
+    volumes:
+      - ./api:/brain/api/src/app
+      - /brain/api/src/app/node_modules
+    command: npm run start:dev
+    depends_on:
+      - postgres
+    environment:
+      DATABASE_URL: postgres://user:password@postgres:5432/neschat
+      NODE_ENV: development
+      PORT: 3000
+    ports:
+      - 3000:3000
+      - 9229:9229
+
+  client:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+      target: development
+    container_name: frontend
+    # We mount client dir to docker container
+    # In order to reflect files from host to container
+    volumes:
+      - ./client:/brain/client/src/app
+      - /brain/client/src/app/node_modules
+    command: npm run start
+    environment:
+      NODE_ENV: development
+      PORT: 3000
+    ports:
+      - 4200:4200
+      - 9876:9876
+    links:
+      - api
+
+  postgres:
+    image: postgres:10.4
+    container_name: neschatdb
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: neschat
+    ports:
+      - 7654:5432
+
+  postrges_adminer:
+    image: dpage/pgadmin4:4.28
+    container_name: adminer
+    depends_on:
+      - postgres
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: password
+    ports:
+      - 5050:80
+
